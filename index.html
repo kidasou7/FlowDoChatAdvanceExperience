@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>FlowDoChat - 先行体験登録</title>
     <meta name="description" content="話すだけでタスクが片付く。AIパートナーと一緒に、罪悪感ゼロの毎日を始めよう。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +37,11 @@
             box-sizing: border-box;
         }
 
+        html {
+            height: 100%;
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
             font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-primary);
@@ -43,7 +49,9 @@
             line-height: 1.8;
             overflow-x: hidden;
             min-width: 320px;
-            /* iPhone SE最小幅 */
+            min-height: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* ===== CURSOR LIGHT ===== */
