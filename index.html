@@ -104,14 +104,17 @@
         /* ===== HERO SECTION ===== */
         .hero {
             min-height: 100vh;
+            min-height: 100dvh;
+            /* Dynamic viewport height for mobile */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
             padding: 60px 24px;
+            padding-top: max(60px, env(safe-area-inset-top));
+            padding-bottom: max(60px, env(safe-area-inset-bottom));
             position: relative;
-            /* overflow削除: 境界線防止 */
         }
 
         .hero::before {
@@ -634,16 +637,20 @@
             }
 
             .hero {
-                min-height: auto;
-                padding: 100px 24px 80px;
+                min-height: 100vh;
+                min-height: 100dvh;
+                padding: 80px 20px;
+                padding-top: max(80px, env(safe-area-inset-top));
             }
 
             .hero h1 {
-                font-size: 1.8rem;
+                font-size: 1.6rem;
+                line-height: 1.5;
             }
 
             .hero-description {
-                font-size: 1rem;
+                font-size: 0.95rem;
+                padding: 0 8px;
             }
 
             .ai-visual {
