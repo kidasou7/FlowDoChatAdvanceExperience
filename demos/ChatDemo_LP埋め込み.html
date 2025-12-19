@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowDoChat - LP埋め込み用デモ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* iPhone Mockup - Figma Style 3D */
+        .iphone-wrapper {
+            perspective: 1500px;
+            padding: 40px;
+        }
+
+        .iphone-mockup {
+            position: relative;
+            width: 300px;
+            height: 650px;
+            background: #1a1a1a;
+            border-radius: 45px;
+            padding: 10px;
+            transform: rotateY(-12deg) rotateX(5deg) rotateZ(2deg);
+            transform-style: preserve-3d;
+            box-shadow:
+                0 50px 100px -30px rgba(0, 0, 0, 0.7),
+                0 30px 60px -20px rgba(0, 0, 0, 0.5),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .iphone-mockup:hover {
+            transform: rotateY(-5deg) rotateX(2deg) rotateZ(1deg) scale(1.02);
+        }
+
+        /* Top highlight */
+        .iphone-mockup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 100%);
+            border-radius: 45px 45px 0 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Reflection */
+        .iphone-mockup::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: 10%;
+            right: 10%;
+            height: 80px;
+            background: linear-gradient(180deg, rgba(45, 212, 191, 0.2) 0%, transparent 100%);
+            filter: blur(20px);
+            transform: scaleY(-0.3) translateZ(-50px);
+            opacity: 0.6;
+        }
+
+        .iphone-notch {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95px;
+            height: 26px;
+            background: #1a1a1a;
+            border-radius: 0 0 14px 14px;
+            z-index: 50;
+        }
+
+        .iphone-screen {
+            width: 100%;
+            height: 100%;
+            border-radius: 38px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 50%, #0891b2 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            padding: 14px 16px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 36px;
+        }
+
+        .header-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .logo {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .chat-bubble.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .chat-bubble.user {
+            background: white;
+            color: #374151;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.ai {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            align-self: flex-start;
+            border-top-left-radius: 4px;
+        }
+
+        /* AI Avatar */
+        .ai-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .ai-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-avatar::before {
+            content: '';
+            width: 55%;
+            height: 55%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(0.8);
+                opacity: 0.4;
+            }
+
+            50% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        /* Task Suggestion Card */
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 14px;
+            padding: 12px;
+            margin-top: 6px;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .suggestion-card.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .suggestion-title {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .task-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .task-chip {
+            background: white;
+            padding: 6px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+
+        .task-chip.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .task-chip .add-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e0f2f1;
+            color: #009688;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6px;
+        }
+
+        .task-chip.selected {
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+            color: white;
+        }
+
+        .task-chip.selected .add-icon {
+            background: white;
+            color: #14b8a6;
+        }
+
+        /* Bottom Panel */
+        .bottom-panel {
+            background: white;
+            border-radius: 24px 24px 0 0;
+            padding: 12px;
+            padding-bottom: 16px;
+            box-shadow: 0 -10px 40px -15px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-bar {
+            background: #f3f4f6;
+            border-radius: 100px;
+            padding: 4px 4px 4px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .input-bar input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 11px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .input-bar input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #14b8a6;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* Task Card Confirmation */
+        .task-confirmed-card {
+            background: white;
+            border: 1px solid #d1fae5;
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .task-confirmed-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .task-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+        }
+
+        .task-info h3 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .task-info p {
+            font-size: 8px;
+            color: #9ca3af;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .typing-indicator.visible {
+            opacity: 1;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="iphone-wrapper">
+        <div class="iphone-mockup">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+                <div class="header">
+                    <div class="header-btn"><i class="fa-solid fa-gear"></i></div>
+                    <span class="logo">FlowDoChat</span>
+                    <div class="header-btn"><i class="fa-solid fa-layer-group"></i></div>
+                </div>
+
+                <div class="chat-area" id="chatArea">
+                    <!-- Chat messages will be dynamically added here -->
+                </div>
+
+                <div class="bottom-panel" id="bottomPanel">
+                    <div class="input-bar">
+                        <input type="text" placeholder="メッセージを入力..." id="inputField">
+                        <button class="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo Script - 「疲れた朝の一歩」シナリオ
+        const demoScript = [
+            { type: 'input-typing', text: '疲れたよぉ...今日もう何もしたくない', delay: 0 },
+            { type: 'user', text: '疲れたよぉ...今日もう何もしたくない', delay: 1500 },
+            { type: 'typing', delay: 500 },
+            { type: 'ai', text: 'お疲れ様...！🫂<br>そういう日、あるよね。<br><br>無理しなくていいよ。<br>まずは小さいことから、一緒にやってみない？', delay: 2200 },
+            { type: 'suggestion', delay: 1000 },
+            { type: 'chip', index: 0, delay: 200 },
+            { type: 'chip', index: 1, delay: 150 },
+            { type: 'chip', index: 2, delay: 150 },
+            { type: 'chip-select', index: 0, delay: 1500 },
+            { type: 'typing', delay: 400 },
+            { type: 'ai', text: 'いいね！🥤<br>水飲むだけで、ちょっとスッキリするよ。', delay: 1500 },
+            { type: 'task-card', delay: 800 },
+            { type: 'reset', delay: 4000 },
+        ];
+
+        let currentStep = 0;
+        let isPlaying = false;
+        let hasStarted = false;
+
+        const chatArea = document.getElementById('chatArea');
+        const inputField = document.getElementById('inputField');
+        const bottomPanel = document.getElementById('bottomPanel');
+
+        // IntersectionObserverで画面に入ったらアニメーション開始
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !hasStarted) {
+                    hasStarted = true;
+                    setTimeout(startDemo, 500);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        observer.observe(document.body);
+
+        function startDemo() {
+            if (isPlaying) return;
+            isPlaying = true;
+            runNextStep();
+        }
+
+        function runNextStep() {
+            if (currentStep >= demoScript.length) {
+                currentStep = 0;
+                resetDemo();
+                setTimeout(() => {
+                    isPlaying = true;
+                    runNextStep();
+                }, 1000);
+                return;
+            }
+
+            const step = demoScript[currentStep];
+
+            setTimeout(() => {
+                if (step.type === 'reset') {
+                    currentStep++;
+                    runNextStep();
+                } else {
+                    executeStep(step);
+                    currentStep++;
+                    if (isPlaying) runNextStep();
+                }
+            }, step.delay);
+        }
+
+        function executeStep(step) {
+            switch (step.type) {
+                case 'input-typing':
+                    animateTyping(step.text);
+                    break;
+                case 'user':
+                    addUserMessage(step.text);
+                    inputField.value = '';
+                    break;
+                case 'typing':
+                    showTypingIndicator();
+                    break;
+                case 'ai':
+                    hideTypingIndicator();
+                    addAIMessage(step.text);
+                    break;
+                case 'suggestion':
+                    addSuggestionCard();
+                    break;
+                case 'chip':
+                    showChip(step.index);
+                    break;
+                case 'chip-select':
+                    selectChip(step.index);
+                    break;
+                case 'task-card':
+                    showTaskCard();
+                    break;
+            }
+        }
+
+        function animateTyping(text) {
+            let i = 0;
+            const interval = setInterval(() => {
+                inputField.value = text.substring(0, i + 1);
+                i++;
+                if (i >= text.length) clearInterval(interval);
+            }, 40);
+        }
+
+        function addUserMessage(text) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble user';
+            bubble.textContent = text;
+            chatArea.appendChild(bubble);
+            setTimeout(() => bubble.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function addAIMessage(text) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'ai-row';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'ai-avatar';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ai';
+            bubble.innerHTML = text;
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            chatArea.appendChild(wrapper);
+
+            setTimeout(() => bubble.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'ai-row';
+            wrapper.id = 'typingWrapper';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'ai-avatar';
+
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(indicator);
+            chatArea.appendChild(wrapper);
+
+            setTimeout(() => indicator.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            const wrapper = document.getElementById('typingWrapper');
+            if (wrapper) wrapper.remove();
+        }
+
+        function addSuggestionCard() {
+            const card = document.createElement('div');
+            card.className = 'suggestion-card';
+            card.id = 'suggestionCard';
+            card.innerHTML = `
+                <div class="suggestion-title">まずはこれからやる？ 👇</div>
+                <div class="task-chips" id="taskChips">
+                    <div class="task-chip" data-index="0">
+                        <span>🥤 水を飲む</span>
+                        <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="task-chip" data-index="1">
+                        <span>🛋️ 5分休む</span>
+                        <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="task-chip" data-index="2">
+                        <span>🌬️ 深呼吸</span>
+                        <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                </div>
+            `;
+            chatArea.appendChild(card);
+            setTimeout(() => card.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function showChip(index) {
+            const chip = document.querySelector(`.task-chip[data-index="${index}"]`);
+            if (chip) {
+                setTimeout(() => chip.classList.add('visible'), 50);
+            }
+        }
+
+        function selectChip(index) {
+            const chip = document.querySelector(`.task-chip[data-index="${index}"]`);
+            if (chip) {
+                chip.classList.add('selected');
+                chip.querySelector('.add-icon i').className = 'fa-solid fa-check';
+            }
+        }
+
+        function showTaskCard() {
+            const existingCard = document.querySelector('.task-confirmed-card');
+            if (existingCard) return;
+
+            const taskCard = document.createElement('div');
+            taskCard.className = 'task-confirmed-card';
+            taskCard.innerHTML = `
+                <div class="task-check"><i class="fa-solid fa-check"></i></div>
+                <div class="task-info">
+                    <h3>🥤 水を飲む</h3>
+                    <p>よし、やってみよう！</p>
+                </div>
+            `;
+            bottomPanel.insertBefore(taskCard, bottomPanel.firstChild);
+            setTimeout(() => taskCard.classList.add('visible'), 50);
+        }
+
+        function scrollToBottom() {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function resetDemo() {
+            isPlaying = false;
+            chatArea.innerHTML = '';
+            inputField.value = '';
+            const taskCard = document.querySelector('.task-confirmed-card');
+            if (taskCard) taskCard.remove();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowDoChat - TikTok Demo (自動再生)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+                        'panel': '0 -10px 40px -15px rgba(0,0,0,0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .demo-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* TikTok縦型比率 (9:16) */
+        .iphone-frame {
+            width: 375px;
+            height: 812px;
+            border-radius: 50px;
+            border: 10px solid #1a1a1a;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.1),
+                0 50px 100px -20px rgba(0, 0, 0, 0.8);
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 50%, #0891b2 100%);
+        }
+
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 35px;
+            background-color: #1a1a1a;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 50;
+        }
+
+        /* ===== Chat Bubbles ===== */
+        .chat-area {
+            flex: 1;
+            padding: 16px;
+            padding-top: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .chat-bubble.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .chat-bubble.user {
+            background: white;
+            color: #374151;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.ai {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            align-self: flex-start;
+            border-top-left-radius: 4px;
+        }
+
+        /* AI Avatar */
+        .ai-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-avatar::before {
+            content: '';
+            width: 60%;
+            height: 60%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(0.8);
+                opacity: 0.4;
+            }
+
+            50% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        /* Task Suggestion Card */
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 8px;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .suggestion-card.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .suggestion-title {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .task-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .task-chip {
+            background: white;
+            padding: 8px 14px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .task-chip.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .task-chip:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .task-chip .add-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e0f2f1;
+            color: #009688;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+        }
+
+        .task-chip.selected {
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+            color: white;
+        }
+
+        .task-chip.selected .add-icon {
+            background: white;
+            color: #14b8a6;
+        }
+
+        /* Bottom Panel */
+        .bottom-panel {
+            background: white;
+            border-radius: 32px 32px 0 0;
+            padding: 20px;
+            padding-bottom: 32px;
+            box-shadow: 0 -10px 40px -15px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-bar {
+            background: #f3f4f6;
+            border-radius: 100px;
+            padding: 6px 6px 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .input-bar input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .input-bar input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #14b8a6;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            background: #0d9488;
+            transform: scale(1.05);
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .typing-indicator.visible {
+            opacity: 1;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Task Card Confirmation */
+        .task-confirmed-card {
+            background: white;
+            border: 1px solid #d1fae5;
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .task-confirmed-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .task-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .task-info h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .task-info p {
+            font-size: 10px;
+            color: #9ca3af;
+        }
+
+        /* Header */
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 50px 20px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 40;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Celebration Effect */
+        .celebration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .celebration.visible {
+            opacity: 1;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            animation: confettiFall 3s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(800px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 100px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .control-btn {
+            padding: 8px 20px;
+            border-radius: 100px;
+            border: none;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn.primary {
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+            color: white;
+        }
+
+        .control-btn.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .progress-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="demo-container">
+        <div class="iphone-frame">
+            <div class="notch"></div>
+
+            <div class="header">
+                <div class="header-btn">
+                    <i class="fa-solid fa-gear"></i>
+                </div>
+                <span class="logo">FlowDoChat</span>
+                <div class="header-btn">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+            </div>
+
+            <div class="chat-area" id="chatArea">
+                <!-- Chat messages will be dynamically added here -->
+            </div>
+
+            <div class="bottom-panel" id="bottomPanel">
+                <div class="input-bar">
+                    <input type="text" placeholder="メッセージを入力..." id="inputField">
+                    <button class="send-btn">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="celebration" id="celebration"></div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <span class="progress-text" id="progressText">準備完了</span>
+        <button class="control-btn primary" id="playBtn" onclick="startDemo()">
+            <i class="fa-solid fa-play"></i> 再生
+        </button>
+        <button class="control-btn secondary" onclick="resetDemo()">
+            <i class="fa-solid fa-rotate-right"></i> リセット
+        </button>
+    </div>
+
+    <script>
+        // Demo Script - 「疲れた朝の一歩」シナリオ
+        const demoScript = [
+            // Phase 1: User sends message (疲れた気持ち)
+            { type: 'input-typing', text: '疲れたよぉ...今日もう何もしたくない', delay: 0 },
+            { type: 'user', text: '疲れたよぉ...今日もう何もしたくない', delay: 1800 },
+
+            // Phase 2: AI typing and empathetic response
+            { type: 'typing', delay: 600 },
+            { type: 'ai', text: 'お疲れ様...！🫂<br>そういう日、あるよね。<br><br>無理しなくていいよ。<br>まずは小さいことから、一緒にやってみない？', delay: 2500 },
+
+            // Phase 3: Task suggestions appear (ハードル低いタスク)
+            { type: 'suggestion', delay: 1200 },
+            { type: 'chip', index: 0, delay: 300 },
+            { type: 'chip', index: 1, delay: 200 },
+            { type: 'chip', index: 2, delay: 200 },
+
+            // Phase 4: User selects a task
+            { type: 'chip-select', index: 0, delay: 1800 },
+
+            // Phase 5: AI encourages
+            { type: 'typing', delay: 600 },
+            { type: 'ai', text: 'いいね！🥤<br>水飲むだけで、ちょっとスッキリするよ。<br><br>やってみよう！', delay: 1800 },
+
+            // Phase 6: Task card appears
+            { type: 'task-card', delay: 1000 },
+
+            // Phase 7: Celebration
+            { type: 'celebration', delay: 800 },
+        ];
+
+        let currentStep = 0;
+        let isPlaying = false;
+
+        const chatArea = document.getElementById('chatArea');
+        const inputField = document.getElementById('inputField');
+        const bottomPanel = document.getElementById('bottomPanel');
+        const celebration = document.getElementById('celebration');
+        const progressText = document.getElementById('progressText');
+        const playBtn = document.getElementById('playBtn');
+
+        function startDemo() {
+            if (isPlaying) return;
+            isPlaying = true;
+            playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 再生中';
+            runNextStep();
+        }
+
+        function runNextStep() {
+            if (currentStep >= demoScript.length) {
+                progressText.textContent = '完了！';
+                playBtn.innerHTML = '<i class="fa-solid fa-check"></i> 完了';
+                isPlaying = false;
+                return;
+            }
+
+            const step = demoScript[currentStep];
+            progressText.textContent = `ステップ ${currentStep + 1}/${demoScript.length}`;
+
+            setTimeout(() => {
+                executeStep(step);
+                currentStep++;
+                if (isPlaying) runNextStep();
+            }, step.delay);
+        }
+
+        function executeStep(step) {
+            switch (step.type) {
+                case 'input-typing':
+                    animateTyping(step.text);
+                    break;
+                case 'user':
+                    addUserMessage(step.text);
+                    inputField.value = '';
+                    break;
+                case 'typing':
+                    showTypingIndicator();
+                    break;
+                case 'ai':
+                    hideTypingIndicator();
+                    addAIMessage(step.text);
+                    break;
+                case 'suggestion':
+                    addSuggestionCard();
+                    break;
+                case 'chip':
+                    showChip(step.index);
+                    break;
+                case 'chip-select':
+                    selectChip(step.index);
+                    break;
+                case 'task-card':
+                    showTaskCard();
+                    break;
+                case 'celebration':
+                    triggerCelebration();
+                    break;
+            }
+        }
+
+        function animateTyping(text) {
+            let i = 0;
+            const interval = setInterval(() => {
+                inputField.value = text.substring(0, i + 1);
+                i++;
+                if (i >= text.length) clearInterval(interval);
+            }, 50);
+        }
+
+        function addUserMessage(text) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble user';
+            bubble.textContent = text;
+            chatArea.appendChild(bubble);
+            setTimeout(() => bubble.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function addAIMessage(text) {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'flex-start';
+            wrapper.style.gap = '10px';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'ai-avatar';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ai';
+            bubble.innerHTML = text;
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            chatArea.appendChild(wrapper);
+
+            setTimeout(() => bubble.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'flex-start';
+            wrapper.style.gap = '10px';
+            wrapper.id = 'typingWrapper';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'ai-avatar';
+
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(indicator);
+            chatArea.appendChild(wrapper);
+
+            setTimeout(() => indicator.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            const wrapper = document.getElementById('typingWrapper');
+            if (wrapper) wrapper.remove();
+        }
+
+        function addSuggestionCard() {
+            const card = document.createElement('div');
+            card.className = 'suggestion-card';
+            card.id = 'suggestionCard';
+            card.innerHTML = `
+                <div class="suggestion-title">まずはこれからやる？ 👇</div>
+                <div class="task-chips" id="taskChips">
+                    <div class="task-chip" data-index="0">
+                        <span>🥤 水を飲む</span>
+                        <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="task-chip" data-index="1">
+                        <span>🛋️ 5分だけ休む</span>
+                        <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="task-chip" data-index="2">
+                        <span>🌬️ 深呼吸する</span>
+                        <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                </div>
+            `;
+            chatArea.appendChild(card);
+            setTimeout(() => card.classList.add('visible'), 50);
+            scrollToBottom();
+        }
+
+        function showChip(index) {
+            const chip = document.querySelector(`.task-chip[data-index="${index}"]`);
+            if (chip) {
+                setTimeout(() => chip.classList.add('visible'), 50);
+            }
+        }
+
+        function selectChip(index) {
+            const chip = document.querySelector(`.task-chip[data-index="${index}"]`);
+            if (chip) {
+                chip.classList.add('selected');
+                chip.querySelector('.add-icon i').className = 'fa-solid fa-check';
+            }
+        }
+
+        function showTaskCard() {
+            // Add task card to bottom panel
+            const existingCard = document.querySelector('.task-confirmed-card');
+            if (existingCard) return;
+
+            const taskCard = document.createElement('div');
+            taskCard.className = 'task-confirmed-card';
+            taskCard.innerHTML = `
+                <div class="task-check"><i class="fa-solid fa-check"></i></div>
+                <div class="task-info">
+                    <h3>🥤 水を飲む</h3>
+                    <p>よし、やってみよう！</p>
+                </div>
+            `;
+            bottomPanel.insertBefore(taskCard, bottomPanel.firstChild);
+            setTimeout(() => taskCard.classList.add('visible'), 50);
+        }
+
+        function triggerCelebration() {
+            celebration.classList.add('visible');
+            const colors = ['#34d399', '#14b8a6', '#fbbf24', '#a78bfa', '#fb7185'];
+
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                confetti.style.animationDuration = (2 + Math.random()) + 's';
+                celebration.appendChild(confetti);
+            }
+
+            setTimeout(() => {
+                celebration.classList.remove('visible');
+                celebration.innerHTML = '';
+            }, 3000);
+        }
+
+        function scrollToBottom() {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function resetDemo() {
+            currentStep = 0;
+            isPlaying = false;
+            playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 再生';
+            progressText.textContent = '準備完了';
+            chatArea.innerHTML = '';
+            inputField.value = '';
+            celebration.innerHTML = '';
+            celebration.classList.remove('visible');
+
+            const taskCard = document.querySelector('.task-confirmed-card');
+            if (taskCard) taskCard.remove();
+        }
+    </script>
+</body>
+
+</html>

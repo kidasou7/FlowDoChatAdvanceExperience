@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowDoChat - AI動画生成用スチル (高解像度)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            background: #000;
+        }
+
+        .export-container {
+            padding: 20px;
+        }
+
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .export-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .export-label {
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .export-sublabel {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 10px;
+        }
+
+        /* iPhone Frame - AI動画生成用の高解像度 */
+        .iphone-frame {
+            width: 360px;
+            height: 780px;
+            border-radius: 48px;
+            border: 10px solid #1a1a1a;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.1),
+                0 40px 80px -20px rgba(0, 0, 0, 0.8);
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 50%, #0891b2 100%);
+        }
+
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 30px;
+            background-color: #1a1a1a;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+            z-index: 50;
+        }
+
+        .header {
+            padding: 46px 18px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 40;
+        }
+
+        .header-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .logo {
+            font-size: 17px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-area {
+            flex: 1;
+            padding: 14px;
+            padding-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .chat-bubble.user {
+            background: white;
+            color: #374151;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.ai {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            align-self: flex-start;
+            border-top-left-radius: 4px;
+        }
+
+        .ai-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .ai-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .ai-avatar.care {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+        }
+
+        .ai-avatar.routine {
+            background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .ai-avatar.focus {
+            background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+        }
+
+        .ai-avatar::before {
+            content: '';
+            width: 55%;
+            height: 55%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+        }
+
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 8px;
+        }
+
+        .suggestion-title {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .task-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .task-chip {
+            background: white;
+            padding: 8px 14px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-chip.selected {
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+            color: white;
+        }
+
+        .add-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e0f2f1;
+            color: #009688;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+        }
+
+        .task-chip.selected .add-icon {
+            background: white;
+            color: #14b8a6;
+        }
+
+        .bottom-panel {
+            background: white;
+            border-radius: 30px 30px 0 0;
+            padding: 18px;
+            padding-bottom: 30px;
+            box-shadow: 0 -10px 40px -15px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-bar {
+            background: #f3f4f6;
+            border-radius: 100px;
+            padding: 6px 6px 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .input-bar input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .input-bar input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #14b8a6;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+
+        .task-confirmed-card {
+            background: white;
+            border: 1px solid #d1fae5;
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .task-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .task-info h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .task-info p {
+            font-size: 10px;
+            color: #9ca3af;
+        }
+
+        /* Instructions */
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            color: white;
+        }
+
+        .instructions h2 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #34d399;
+        }
+
+        .instructions ul {
+            font-size: 12px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.8);
+            padding-left: 20px;
+        }
+
+        .instructions code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="export-container">
+        <div class="instructions">
+            <h2>📹 AI動画生成ツール用スチル画像</h2>
+            <ul>
+                <li><strong>シナリオ:</strong> 「疲れた朝の一歩」- 親身なAIパートナーとの会話</li>
+                <li><strong>Pika / Runway / Sora用:</strong> 各フレームを順番に右クリック → 「画像として保存」</li>
+                <li><strong>推奨解像度:</strong> ブラウザを <code>100%</code> ズームで表示</li>
+                <li><strong>キャプチャ方法:</strong> macOS: <code>Cmd + Shift + 4</code> → 各フレームを個別にキャプチャ</li>
+            </ul>
+        </div>
+
+        <div class="export-grid">
+            <!-- Frame 1: 傾聴 (疲れた気持ちを受け止める) -->
+            <div class="export-item">
+                <div class="export-label">フレーム 1<br><span class="export-sublabel">傾聴モード</span></div>
+                <div class="iphone-frame">
+                    <div class="notch"></div>
+                    <div class="header">
+                        <div class="header-btn"><i class="fa-solid fa-gear"></i></div>
+                        <span class="logo">FlowDoChat</span>
+                        <div class="header-btn"><i class="fa-solid fa-layer-group"></i></div>
+                    </div>
+                    <div class="chat-area">
+                        <div class="chat-bubble user">疲れたよぉ...今日もう何もしたくない</div>
+                        <div class="ai-row">
+                            <div class="ai-avatar care"></div>
+                            <div class="chat-bubble ai">
+                                お疲れ様...！🫂<br><br>
+                                そういう日、あるよね。<br>
+                                無理しなくていいよ。<br><br>
+                                まずは小さいことから、一緒にやってみない？
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bottom-panel">
+                        <div class="input-bar">
+                            <input type="text" placeholder="メッセージを入力...">
+                            <button class="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frame 2: 提案 (ハードル低いタスク) -->
+            <div class="export-item">
+                <div class="export-label">フレーム 2<br><span class="export-sublabel">提案モード</span></div>
+                <div class="iphone-frame">
+                    <div class="notch"></div>
+                    <div class="header">
+                        <div class="header-btn"><i class="fa-solid fa-gear"></i></div>
+                        <span class="logo">FlowDoChat</span>
+                        <div class="header-btn"><i class="fa-solid fa-layer-group"></i></div>
+                    </div>
+                    <div class="chat-area">
+                        <div class="chat-bubble user">うん...でもなんかやらなきゃって思う</div>
+                        <div class="ai-row">
+                            <div class="ai-avatar routine"></div>
+                            <div class="chat-bubble ai">
+                                えらい！その気持ちだけで十分だよ 👏<br><br>
+                                じゃあ、超簡単なことから始めよう！
+                            </div>
+                        </div>
+                        <div class="suggestion-card">
+                            <div class="suggestion-title">まずはこれからやる？ 👇</div>
+                            <div class="task-chips">
+                                <div class="task-chip">
+                                    <span>🥤 水を飲む</span>
+                                    <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                                </div>
+                                <div class="task-chip">
+                                    <span>🛋️ 5分だけ休む</span>
+                                    <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                                </div>
+                                <div class="task-chip">
+                                    <span>🌬️ 深呼吸する</span>
+                                    <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bottom-panel">
+                        <div class="input-bar">
+                            <input type="text" placeholder="メッセージを入力...">
+                            <button class="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frame 3: 実行 (タスク選択) -->
+            <div class="export-item">
+                <div class="export-label">フレーム 3<br><span class="export-sublabel">実行モード</span></div>
+                <div class="iphone-frame">
+                    <div class="notch"></div>
+                    <div class="header">
+                        <div class="header-btn"><i class="fa-solid fa-gear"></i></div>
+                        <span class="logo">FlowDoChat</span>
+                        <div class="header-btn"><i class="fa-solid fa-layer-group"></i></div>
+                    </div>
+                    <div class="chat-area">
+                        <div class="chat-bubble user">じゃあ水飲もうかな</div>
+                        <div class="ai-row">
+                            <div class="ai-avatar focus"></div>
+                            <div class="chat-bubble ai">
+                                いいね！🥤<br><br>
+                                水飲むだけで、ちょっとスッキリするよ。<br><br>
+                                やってみよう！
+                            </div>
+                        </div>
+                        <div class="suggestion-card">
+                            <div class="task-chips">
+                                <div class="task-chip selected">
+                                    <span>🥤 水を飲む</span>
+                                    <div class="add-icon"><i class="fa-solid fa-check"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bottom-panel">
+                        <div class="task-confirmed-card">
+                            <div class="task-check"><i class="fa-solid fa-check"></i></div>
+                            <div class="task-info">
+                                <h3>🥤 水を飲む</h3>
+                                <p>よし、やってみよう！</p>
+                            </div>
+                        </div>
+                        <div class="input-bar">
+                            <input type="text" placeholder="メッセージを入力...">
+                            <button class="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frame 4: 完了・称賛 -->
+            <div class="export-item">
+                <div class="export-label">フレーム 4<br><span class="export-sublabel">完了・称賛</span></div>
+                <div class="iphone-frame">
+                    <div class="notch"></div>
+                    <div class="header">
+                        <div class="header-btn"><i class="fa-solid fa-gear"></i></div>
+                        <span class="logo">FlowDoChat</span>
+                        <div class="header-btn"><i class="fa-solid fa-layer-group"></i></div>
+                    </div>
+                    <div class="chat-area">
+                        <div class="chat-bubble user">飲んだ！</div>
+                        <div class="ai-row">
+                            <div class="ai-avatar focus"></div>
+                            <div class="chat-bubble ai">
+                                えらい！！🎉✨<br><br>
+                                ほら、一歩できたじゃん！<br><br>
+                                この調子でいこう？<br>
+                                それとも、ちょっと休む？
+                            </div>
+                        </div>
+                        <div class="suggestion-card">
+                            <div class="task-chips">
+                                <div class="task-chip">
+                                    <span>✨ もう1つやる</span>
+                                    <div class="add-icon"><i class="fa-solid fa-arrow-right"></i></div>
+                                </div>
+                                <div class="task-chip">
+                                    <span>☕ ちょっと休む</span>
+                                    <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bottom-panel">
+                        <div class="input-bar">
+                            <input type="text" placeholder="メッセージを入力...">
+                            <button class="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
