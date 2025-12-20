@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FlowDoChat - 先行アクセス登録</title>
+    <meta name="description" content="LLMとの会話を、そのまま仕事のフローにする。ChatGPT・Cursor・Claudeヘビーユーザーのための会話型タスクハブ。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+JP:wght@400;600;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #05080f;
+            --bg-secondary: #0a0f1a;
+            --text-primary: #e0e7ff;
+            --text-secondary: #8a9bbf;
+            --accent-teal: #2dd4bf;
+            --accent-purple: #a78bfa;
+            --accent-gradient: linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%);
+            --glow-teal: rgba(45, 212, 191, 0.3);
+            --glow-purple: rgba(167, 139, 250, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden;
+            min-width: 320px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== FIRST VIEW - 95%の仕事をする ===== */
+        .first-view {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 24px;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .first-view::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--glow-teal) 0%, transparent 70%);
+            opacity: 0.4;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: translateX(-50%) scale(1);
+                opacity: 0.4;
+            }
+
+            50% {
+                transform: translateX(-50%) scale(1.1);
+                opacity: 0.6;
+            }
+        }
+
+        .first-view-content {
+            position: relative;
+            z-index: 1;
+            max-width: 700px;
+        }
+
+        /* タグライン */
+        .tagline {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(45, 212, 191, 0.1);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--accent-teal);
+            margin-bottom: 32px;
+        }
+
+        /* キャッチコピー */
+        .logo-name {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .main-copy {
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            font-weight: 700;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        /* サブコピー */
+        .sub-copy {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            line-height: 1.8;
+        }
+
+        /* CTA */
+        .cta-button {
+            display: inline-block;
+            padding: 18px 48px;
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 100px;
+            box-shadow: 0 8px 32px var(--glow-teal);
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px var(--glow-purple);
+        }
+
+        .cta-note {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 16px;
+        }
+
+        /* スクロール示唆 */
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(8px);
+            }
+        }
+
+        /* ===== SECOND LAYER - 本気勢向け ===== */
+        .second-layer {
+            padding: 80px 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .block {
+            margin-bottom: 80px;
+        }
+
+        .block-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            padding-left: 16px;
+            border-left: 3px solid var(--accent-teal);
+        }
+
+        .block-list {
+            list-style: none;
+        }
+
+        .block-list li {
+            padding: 12px 0;
+            padding-left: 24px;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .block-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-purple);
+        }
+
+        .use-case {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .use-case-label {
+            font-size: 0.75rem;
+            color: var(--accent-teal);
+            margin-bottom: 4px;
+        }
+
+        .message-box {
+            background: rgba(167, 139, 250, 0.08);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            border-radius: 16px;
+            padding: 32px;
+            line-height: 1.9;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .message-box strong {
+            color: var(--text-primary);
+        }
+
+        /* フッターCTA */
+        .footer-cta {
+            text-align: center;
+            padding: 60px 24px 80px;
+            background: linear-gradient(to top, rgba(45, 212, 191, 0.05), transparent);
+        }
+
+        .footer-cta .cta-button {
+            margin-bottom: 16px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .first-view {
+                padding: 32px 20px;
+            }
+
+            .tagline {
+                font-size: 0.75rem;
+                padding: 6px 16px;
+            }
+
+            .cta-button {
+                padding: 16px 36px;
+                font-size: 1rem;
+            }
+
+            .second-layer {
+                padding: 60px 20px;
+            }
+
+            .block {
+                margin-bottom: 60px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ===== FIRST VIEW ===== -->
+    <section class="first-view">
+        <div class="first-view-content">
+            <div class="tagline">AIワークフロー好きのための、会話型タスクハブ</div>
+
+            <h1 class="logo-name">FlowDoChat</h1>
+            <p class="main-copy">「LLMとの会話」を、そのまま仕事のフローにする。</p>
+
+            <p class="sub-copy">
+                ChatGPTやCursorとのやりとりを、<br>
+                メモ地獄にせず"そのまま進行管理"したい人向けの実験プロダクトです。
+            </p>
+
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLScchXPQydNFgYSVN8_dwwwlpD-Y3TjXabEHEWXeVCVuliaGHg/viewform"
+                class="cta-button" target="_blank">
+                先行アクセスに登録する →
+            </a>
+            <p class="cta-note">リリース前のテスト版を、優先的に招待します。</p>
+        </div>
+
+        <div class="scroll-hint">↓ もっと詳しく</div>
+    </section>
+
+    <!-- ===== SECOND LAYER ===== -->
+    <div class="second-layer">
+        <!-- どんな人向けか -->
+        <div class="block">
+            <h2 class="block-title">こんな人のためのFlowDoChat</h2>
+            <ul class="block-list">
+                <li>ChatGPT / Cursor / Claude を毎日触ってる</li>
+                <li>でも会話ログが流れていって「結局どこに何があるか分からない」</li>
+                <li>「今日やること」と「LLMとの会話」が頭の中でぐちゃぐちゃになる</li>
+            </ul>
+        </div>
+
+        <!-- 使い方イメージ -->
+        <div class="block">
+            <h2 class="block-title">例えば、こんな使い方を想定しています</h2>
+            <div class="use-case">
+                <div class="use-case-label">CASE 01</div>
+                「クライアントAのアイデア相談スレッド」
+            </div>
+            <div class="use-case">
+                <div class="use-case-label">CASE 02</div>
+                「AI間取り案件の指示・修正メモ」
+            </div>
+            <div class="use-case">
+                <div class="use-case-label">CASE 03</div>
+                「自分用エージェントへの"今日やってほしいこと"投げ場」
+            </div>
+        </div>
+
+        <!-- 先行ユーザーへのメッセージ -->
+        <div class="block">
+            <h2 class="block-title">まだプロトタイプ段階の実験です</h2>
+            <div class="message-box">
+                FlowDoChatは、<br>
+                きだが<strong>実案件＆個人開発で本当に欲しいもの</strong>を形にしている途中です。<br><br>
+                その過程を一緒に作ってくれる<br>
+                <strong>「変態的にLLM好きな人」</strong>を探しています。<br><br>
+                フィードバックをくれた人には、<br>
+                リリース後も優先的に新機能を届けます。
+            </div>
+        </div>
+    </div>
+
+    <!-- フッターCTA -->
+    <div class="footer-cta">
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLScchXPQydNFgYSVN8_dwwwlpD-Y3TjXabEHEWXeVCVuliaGHg/viewform"
+            class="cta-button" target="_blank">
+            先行アクセスに登録する →
+        </a>
+        <p class="cta-note">30秒で完了 / スパムは送りません</p>
+    </div>
+</body>
+
+</html>
